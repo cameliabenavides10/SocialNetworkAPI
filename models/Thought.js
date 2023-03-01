@@ -11,7 +11,7 @@ const thoughtSchema = new Schema(
       minlength: 1,
     },
     username: {
-      type: Boolean,
+      type: String,
       default: true,
     },
     createdAt: {
