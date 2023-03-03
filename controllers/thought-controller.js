@@ -1,9 +1,9 @@
-const { Thought } = require('../models');
+const { Thought, User } = require('../models');
 
 module.exports = {
 // Get all thoughts
 getThoughts(req, res) {
-    Thought.find()
+    Thought.find().populate('reactions')
       .then((thoughts) => res.json(thoughts))
       .catch((err) => res.status(500).json(err));
   },
@@ -21,7 +21,13 @@ getSingleThought(req, res) {
   // Create a thought
   createThought(req, res) {
     Thought.create(req.body)
-      .then((thought) => res.json(thought))
+      .then((thought) => {
+        User.findOneAndUpdate(
+          {_id: req.params.userId},
+          { $addToSet: {thought: thought._id}}
+        )
+        res.json(thought)
+      })
       .catch((err) => {
         console.log(err);
         return res.status(500).json(err);
@@ -47,4 +53,41 @@ getSingleThought(req, res) {
       )
       .catch((err) => res.status(500).json(err));
   },
+
+
+   // Add a reaction to a thought
+   addReaction(req, res) {
+    console.log('You are adding a reaction');
+    console.log(req.body);
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $addToSet: { reactions: req.body } }
+    )
+      .then((reaction) =>
+        !reaction
+          ? res
+            .status(404)
+            .json({ message: 'No thought found with that ID :(' })
+          : res.json(reaction)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+
+    // delete a reaction to a thought
+    deleteReaction(req, res) {
+      console.log('You are deleting a reaction');
+      console.log(req.body);
+      Thought.findOneAndUpdate(
+        { _id: req.params.thoughtId },
+        { $pull: { reactions: {reactionId: req.params.reactionId } } }
+      )
+        .then((thought) =>
+          !thought
+            ? res
+              .status(404)
+              .json({ message: 'No thought found with that ID :(' })
+            : res.json(thought)
+        )
+        .catch((err) => res.status(500).json(err));
+    },
 };
